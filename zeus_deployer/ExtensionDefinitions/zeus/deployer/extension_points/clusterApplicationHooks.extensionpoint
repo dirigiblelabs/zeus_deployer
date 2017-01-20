@@ -1,0 +1,4 @@
+{
+  "extension-point":"/zeus/deployer/extension_points/clusterApplicationHooks",
+  "description":"Cluster application hooks"
+}

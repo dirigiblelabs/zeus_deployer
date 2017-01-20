@@ -3,7 +3,6 @@
 
 var request = require('net/http/request');
 var response = require('net/http/response');
-var xss = require('utils/xss');
 
 var templates = require('zeus/templates/utils/templates');
 var generator = require('zeus/templates/utils/generator');
@@ -12,32 +11,74 @@ var cluster = require('zeus/utils/cluster');
 var kubernetesDeployments = require('kubernetes/deployments');
 var kubernetesServices = require('kubernetes/services');
 
+handleRequest(request, response);
 
-var clusterSettings = cluster.getSettings();
-var server = clusterSettings.server;
-var namespace = clusterSettings.namespace;
-var token = clusterSettings.token;
+function handleRequest(httpRequest, httpResponse) {
+	try {
+		dispatchRequest(httpRequest, httpResponse);
+	} catch (e) {
+		console.error(e);
+		sendResponse(httpResponse, httpResponse.BAD_REQUEST, 'text/plain', e);
+	}
+}
 
-try {
-    var applicationTemplateId = xss.escapeSql(request.getParameter('applicationTemplateId'));
-    var applicationName = xss.escapeSql(request.getParameter('applicationName'));
+function dispatchRequest(httpRequest, httpResponse) {
+	response.setContentType('application/json; charset=UTF-8');
+	response.setCharacterEncoding('UTF-8');
 
-    var applicationTemplate = templates.getApplicationTemplate(applicationTemplateId);
-    var generatedBody = generator.generate(applicationName, applicationTemplate, namespace); 
+	switch (httpRequest.getMethod()) {
+		case 'POST': 
+			handlePostRequest(httpRequest, httpResponse);
+			break;
+		default:
+			handleNotAllowedRequest(httpResponse);
+	}
+}
+
+function handlePostRequest(httpRequest, httpResponse) {
+	var newApplication = getRequestBody(httpRequest);
+    // TODO Validate the body!
+
+	var clusterSettings = cluster.getSettings();
+	var server = clusterSettings.server;
+	var namespace = clusterSettings.namespace;
+	var token = clusterSettings.token;
+    
+    var applicationTemplate = templates.getApplicationTemplate(newApplication.applicationTemplateId);
+    var generatedBody = generator.generate(newApplication.name, applicationTemplate, namespace); 
+    
     for (var i = 0; i < generatedBody.deployments.length; i ++) {
         var deploymentBody = generatedBody.deployments[i];
         var deploymentResponse = kubernetesDeployments.create(server, token, namespace, deploymentBody);
+        // TODO Something with the response
         console.log(JSON.stringify(deploymentResponse));
     }
     for (var i = 0; i < generatedBody.services.length; i ++) {
         var serviceBody = generatedBody.services[i];
         var serviceResponse = kubernetesServices.create(server, token, namespace, serviceBody);
+        // TODO Something with the response
         console.log(JSON.stringify(serviceResponse));
     }
-    response.println('Ok');
-} catch (e) {
-    response.println(e);
+    cluster.afterCreateApplication(newApplication);
+	sendResponse(httpResponse, httpResponse.CREATED);
 }
 
-response.flush();
-response.close();
+function handleNotAllowedRequest(httpResponse) {
+	sendResponse(httpResponse, httpResponse.METHOD_NOT_ALLOWED);
+}
+
+function getRequestBody(httpRequest) {
+	try {
+		return JSON.parse(httpRequest.readInputText());
+	} catch (e) {
+		return null;
+	}
+}
+
+function sendResponse(response, status, contentType, content) {
+	response.setStatus(status);
+	response.setContentType(contentType);
+	response.println(content);
+	response.flush();
+	response.close();	
+}
