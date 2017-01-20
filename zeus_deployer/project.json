@@ -1,1 +1,8 @@
-{"guid":"zeus_deployer","repository":{"type":"git","branch":"master","url":"https://github.com/dirigiblelabs/zeus_deployer.git"}}
+{
+    "guid": "zeus_deployer",
+    "repository": {
+        "type": "git",
+        "branch": "master",
+        "url": "https://github.com/dirigiblelabs/zeus_deployer.git"
+    }
+}
