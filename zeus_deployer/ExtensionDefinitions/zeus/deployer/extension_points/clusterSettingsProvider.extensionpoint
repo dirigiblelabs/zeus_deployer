@@ -1,0 +1,4 @@
+{
+  "extension-point":"/zeus/deployer/extension_points/clusterSettingsProvider",
+  "description":"Cluster settings provider extension point"
+}
