@@ -7,6 +7,7 @@ var xss = require('utils/xss');
 
 var cluster = require('zeus/utils/cluster');
 var kubernetesIngresses = require('kubernetes/ingresses');
+var kubernetesIngressUtils = require('kubernetes/utils/ingress');
 
 handleRequest(request, response);
 
@@ -27,20 +28,46 @@ function dispatchRequest(httpRequest, httpResponse) {
 		case 'GET': 
 			handleGetRequest(httpRequest, httpResponse, xss);
 			break;
+		case 'POST':
+			handlePostRequest(httpRequest, httpResponse);
+			break;
 		default:
 			handleNotAllowedRequest(httpResponse);
 	}
 }
 
-function handleGetRequest(httpRequest, httpResponse) {
+function handleGetRequest(httpRequest, httpResponse, xss) {
 	var clusterSettings = cluster.getSettings();
 
-	var ingresses = kubernetesIngresses.list(clusterSettings.server, clusterSettings.token, clusterSettings.namespace, getQueryOptions(httpRequest));
+	var ingresses = kubernetesIngresses.list(clusterSettings.server, clusterSettings.token, clusterSettings.namespace, getQueryOptions(httpRequest, xss));
 
 	sendResponse(httpResponse, httpResponse.OK, 'application/json', JSON.stringify(ingresses));
 }
 
-function getQueryOptions(httpRequest) {
+function handlePostRequest(httpRequest, httpResponse) {
+	var clusterSettings = cluster.getSettings();
+
+	var body = getRequestBody(httpRequest);
+	var name = body.name;
+	var namespace = body.namespace;
+	var labels = {
+		'applicationName': body.applicationName
+	};
+	var host = body.host;
+	var path = body.path;
+	var serviceName = body.serviceName;
+	var servicePort = body.servicePort;
+
+	var ingress = kubernetesIngressUtils.getObject(name, namespace, labels, host, path, serviceName, servicePort);
+	try {
+		kubernetesIngresses.create(clusterSettings.server, clusterSettings.token, clusterSettings.namespace, ingress);
+		sendResponse(httpResponse, httpResponse.CREATED);
+	} catch (e) {
+		sendResponse(httpResponse, httpResponse.BAD_REQUEST, 'application/json', JSON.stringify(e));
+	}
+}
+
+function getQueryOptions(httpRequest, xss) {
 	var queryOptions = {};
 	var applicationName = xss.escapeSql(httpRequest.getParameter('applicationName'));
 	if (applicationName) {
@@ -51,6 +78,14 @@ function getQueryOptions(httpRequest) {
 
 function handleNotAllowedRequest(httpResponse) {
 	sendResponse(httpResponse, httpResponse.METHOD_NOT_ALLOWED);
+}
+
+function getRequestBody(httpRequest) {
+	try {
+		return JSON.parse(httpRequest.readInputText());
+	} catch (e) {
+		return null;
+	}
 }
 
 function sendResponse(response, status, contentType, content) {
