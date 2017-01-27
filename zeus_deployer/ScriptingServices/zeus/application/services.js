@@ -37,7 +37,14 @@ function handleGetRequest(httpRequest, httpResponse) {
 
 	var services = kubernetesServices.list(clusterSettings.server, clusterSettings.token, clusterSettings.namespace, getQueryOptions(httpRequest));
 
+	addClusterInfo(services, clusterSettings);
 	sendResponse(httpResponse, httpResponse.OK, 'application/json', JSON.stringify(services));
+}
+
+function addClusterInfo(services, clusterSettings) {
+	for (var i = 0 ; i < services.length; i ++) {
+		services[i].server = clusterSettings.server;
+	}
 }
 
 function getQueryOptions(httpRequest) {
@@ -47,7 +54,7 @@ function getQueryOptions(httpRequest) {
 		queryOptions.labelSelector = 'applicationName=' + applicationName;
 	}
 	return queryOptions;
-};
+}
 
 function handleNotAllowedRequest(httpResponse) {
 	sendResponse(httpResponse, httpResponse.METHOD_NOT_ALLOWED);

@@ -6,7 +6,7 @@ var response = require('net/http/response');
 var xss = require('utils/xss');
 
 var cluster = require('zeus/utils/cluster');
-var kubernetesDeployments = require('kubernetes/deployments');
+var kubernetesIngresses = require('kubernetes/ingresses');
 
 handleRequest(request, response);
 
@@ -35,16 +35,9 @@ function dispatchRequest(httpRequest, httpResponse) {
 function handleGetRequest(httpRequest, httpResponse) {
 	var clusterSettings = cluster.getSettings();
 
-	var deployments = kubernetesDeployments.list(clusterSettings.server, clusterSettings.token, clusterSettings.namespace, getQueryOptions(httpRequest));
+	var ingresses = kubernetesIngresses.list(clusterSettings.server, clusterSettings.token, clusterSettings.namespace, getQueryOptions(httpRequest));
 
-	addClusterInfo(deployments, clusterSettings);
-	sendResponse(httpResponse, httpResponse.OK, 'application/json', JSON.stringify(deployments));
-}
-
-function addClusterInfo(deployments, clusterSettings) {
-	for (var i = 0 ; i < deployments.length; i ++) {
-		deployments[i].server = clusterSettings.server;
-	}
+	sendResponse(httpResponse, httpResponse.OK, 'application/json', JSON.stringify(ingresses));
 }
 
 function getQueryOptions(httpRequest) {
