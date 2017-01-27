@@ -1,6 +1,10 @@
 /* globals $ */
 /* eslint-env node, dirigible */
 
+var kubernetesServiceUtils = require('kubernetes/utils/service');
+var kubernetesDeploymentUtils = require('kubernetes/utils/deployment');
+var kubernetesContainerUtils = require('kubernetes/utils/container');
+
 exports.generate = function(applicationName, applicationTemplate, namespace) {
 	var body = {
 		'deployments': [],
@@ -21,75 +25,39 @@ exports.generate = function(applicationName, applicationTemplate, namespace) {
 
 function getDeploymentBody(deploymentTemplate, applicationName, namespace) {
 	var name = applicationName + '-' + deploymentTemplate.name;
-	var deployment = {
-		"kind": "Deployment",
-	    "apiVersion": "extensions/v1beta1",
-	    "metadata": {
-	        "name": name,
-	        "namespace": namespace,
-	        "labels": {
-	            "applicationName": applicationName,
-	            "deploymentTemplateName": deploymentTemplate.name
-	        }
-	    },
-	    "spec": {
-	        "replicas": deploymentTemplate.replicas,
-	        "selector": {
-	            "matchLabels": {
-	                "applicationName": applicationName,
-	                "deploymentTemplateName": deploymentTemplate.name
-	            }
-	        },
-	        "template": {
-	            "metadata": {
-	                "labels": {
-	                	"applicationName": applicationName,
-	                	"deploymentTemplateName": deploymentTemplate.name
-	                }
-	            },
-	            "spec": {
-	                "containers": [
-	                ]
-                }
-            }
-        }
-	};
+    var labels = {
+        'applicationName': applicationName,
+        'deploymentTemplateName': deploymentTemplate.name
+    };
+    var matchLabels = {
+        'applicationName': applicationName,
+        'deploymentTemplateName': deploymentTemplate.name
+    };
+    var replicas = deploymentTemplate.replicas;
+    var containers = [];
 	for (var i = 0 ; i < deploymentTemplate.containers.length; i ++) {
 		var container = deploymentTemplate.containers[i];
-		deployment.spec.template.spec.containers.push({
-			"name": name,
-			"image": container.image,
-			"ports": [{
-				"containerPort": container.port,
-				"protocol": container.protocol
-			}]
-		});
+		var ports = [];
+		ports.push(kubernetesContainerUtils.getPort(container.protocol, container.port));
+		containers.push(kubernetesContainerUtils.getObject(name, container.image, ports));
 	}
-	return deployment;
+	return kubernetesDeploymentUtils.getObject(name, namespace, labels, matchLabels, replicas, containers);
 }
+
 
 function getServiceBody(serviceTemplate, applicationName, namespace, deploymentTemplateName) {
 	var name = applicationName + '-' + serviceTemplate.name;
-	return {
-	    "kind": "Service",
-	    "apiVersion": "v1",
-	    "metadata": {
-	    	"name": name,
-    		"namespace": namespace,
-    		"labels": {
-	            "applicationName": applicationName,
-	            "deploymentTemplateName": deploymentTemplateName
-	        }
-	    },
-	    "spec": {
-	        "selector": {
-                "applicationName": applicationName,
-                "deploymentTemplateName": deploymentTemplateName
-	        },
-	        "ports": [{
-	        	"port": serviceTemplate.port
-	        }],
-	        "type": serviceTemplate.type
-	    }
+	var labels = {
+		'applicationName': applicationName,
+		'deploymentTemplateName': deploymentTemplateName
 	};
+	var selector = {
+		'applicationName': applicationName,
+		'deploymentTemplateName': deploymentTemplateName
+	};
+	var ports =[];
+	ports.push(kubernetesServiceUtils.getPort(serviceTemplate.port));
+	var type = serviceTemplate.type;
+	
+	return kubernetesServiceUtils.getObject(name, namespace, labels, selector, ports, type);
 }
