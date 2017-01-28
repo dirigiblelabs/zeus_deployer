@@ -31,6 +31,12 @@ function dispatchRequest(httpRequest, httpResponse) {
 		case 'POST':
 			handlePostRequest(httpRequest, httpResponse);
 			break;
+		case 'PUT':
+			handlePutRequest(httpRequest, httpResponse);
+			break;
+		case 'DELETE':
+			handleDeleteRequest(httpRequest, httpResponse, xss);
+			break;
 		default:
 			handleNotAllowedRequest(httpResponse);
 	}
@@ -49,7 +55,7 @@ function handlePostRequest(httpRequest, httpResponse) {
 
 	var body = getRequestBody(httpRequest);
 	var name = body.name;
-	var namespace = body.namespace;
+	var namespace = body.namespace; // TODO This could be replaced with `clusterSettings.namespace`, as the mapping between HCP Accounts & K8S Namespaces is 1:1
 	var labels = {
 		'applicationName': body.applicationName
 	};
@@ -65,6 +71,35 @@ function handlePostRequest(httpRequest, httpResponse) {
 	} catch (e) {
 		sendResponse(httpResponse, httpResponse.BAD_REQUEST, 'application/json', JSON.stringify(e));
 	}
+}
+
+function handlePutRequest(httpRequest, httpResponse) {
+	var clusterSettings = cluster.getSettings();
+
+	var name = getNameParameter(httpRequest, xss);
+	var updatedIngress = getRequestBody(httpRequest);
+	try {
+		kubernetesIngresses.update(clusterSettings.server, clusterSettings.token, clusterSettings.namespace, name, updatedIngress);
+		sendResponse(httpResponse, httpResponse.NO_CONTENT);
+	} catch (e) {
+		sendResponse(httpResponse, httpResponse.BAD_REQUEST, 'application/json', JSON.stringify(e));
+	}
+}
+
+function handleDeleteRequest(httpRequest, httpResponse, xss) {
+	var clusterSettings = cluster.getSettings();
+	var name = getNameParameter(httpRequest, xss);
+	try {
+		kubernetesIngresses.delete(clusterSettings.server, clusterSettings.token, clusterSettings.namespace, name);
+		sendResponse(httpResponse, httpResponse.NO_CONTENT);
+	} catch (e) {
+		sendResponse(httpResponse, httpResponse.BAD_REQUEST, 'application/json', JSON.stringify(e));
+	}
+	
+}
+
+function getNameParameter(httpRequest, xss) {
+	return xss.escapeSql(httpRequest.getParameter('name'));
 }
 
 function getQueryOptions(httpRequest, xss) {
