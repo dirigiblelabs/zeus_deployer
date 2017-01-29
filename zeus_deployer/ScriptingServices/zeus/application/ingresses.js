@@ -95,7 +95,6 @@ function handleDeleteRequest(httpRequest, httpResponse, xss) {
 	} catch (e) {
 		sendResponse(httpResponse, httpResponse.BAD_REQUEST, 'application/json', JSON.stringify(e));
 	}
-	
 }
 
 function getNameParameter(httpRequest, xss) {

@@ -27,6 +27,9 @@ function dispatchRequest(httpRequest, httpResponse) {
 		case 'GET': 
 			handleGetRequest(httpRequest, httpResponse, xss);
 			break;
+		case 'DELETE':
+			handleDeleteRequest(httpRequest, httpResponse, xss);
+			break;
 		default:
 			handleNotAllowedRequest(httpResponse);
 	}
@@ -41,10 +44,25 @@ function handleGetRequest(httpRequest, httpResponse) {
 	sendResponse(httpResponse, httpResponse.OK, 'application/json', JSON.stringify(services));
 }
 
+function handleDeleteRequest(httpRequest, httpResponse, xss) {
+	var clusterSettings = cluster.getSettings();
+	var name = getNameParameter(httpRequest, xss);
+	try {
+		kubernetesServices.delete(clusterSettings.server, clusterSettings.token, clusterSettings.namespace, name);
+		sendResponse(httpResponse, httpResponse.NO_CONTENT);
+	} catch (e) {
+		sendResponse(httpResponse, httpResponse.BAD_REQUEST, 'application/json', JSON.stringify(e));
+	}
+}
+
 function addClusterInfo(services, clusterSettings) {
-	for (var i = 0 ; i < services.length; i ++) {
+	for (var i = 0 ; i < services && services.length; i ++) {
 		services[i].server = clusterSettings.server;
 	}
+}
+
+function getNameParameter(httpRequest, xss) {
+	return xss.escapeSql(httpRequest.getParameter('name'));
 }
 
 function getQueryOptions(httpRequest) {
