@@ -11,6 +11,7 @@ var kubernetesIngresses = require('kubernetes/ingresses');
 var kubernetesServices = require('kubernetes/services');
 var kubernetesDeployments = require('kubernetes/deployments');
 var kubernetesReplicaSets = require('kubernetes/replicasets');
+var kubernetesPods = require('kubernetes/pods');
 
 handleRequest(request, response);
 
@@ -51,6 +52,7 @@ function handleDeleteRequest(httpRequest, httpResponse, xss) {
 	deleteServices(server, token, namespace, applicationName);
 	deleteDeployments(server, token, namespace, applicationName);
 	deleteReplicaSets(server, token, namespace, applicationName);
+	deletePods(server, token, namespace, applicationName);
 
 	cluster.afterDeleteApplication(applicationName);
 
@@ -83,6 +85,13 @@ function deleteReplicaSets(server, token, namespace, applicationName) {
 	var replicasets = kubernetesReplicaSets.list(server, token, namespace, getLabelSelector(applicationName));
 	for (var i = 0 ; i < replicasets && replicasets.length; i ++) {
 		kubernetesReplicaSets.delete(server, token, namespace, replicasets[i].metadata.name);
+	}
+}
+
+function deletePods(server, token, namespace, applicationName) {
+	var pods = kubernetesPods.list(server, token, namespace, getLabelSelector(applicationName));
+	for (var i = 0 ; i < pods && pods.length; i ++) {
+		kubernetesPods.delete(server, token, namespace, pods[i].metadata.name);
 	}
 }
 

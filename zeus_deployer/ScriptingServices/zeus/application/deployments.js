@@ -42,7 +42,7 @@ function handleGetRequest(httpRequest, httpResponse) {
 }
 
 function addClusterInfo(deployments, clusterSettings) {
-	for (var i = 0 ; i < deployments.length; i ++) {
+	for (var i = 0 ; i < deployments && deployments.length; i ++) {
 		deployments[i].server = clusterSettings.server;
 	}
 }
