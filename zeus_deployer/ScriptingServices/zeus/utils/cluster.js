@@ -19,11 +19,11 @@ exports.afterCreateApplication = function(application) {
 	}
 };
 
-exports.afterDeleteApplication = function(application) {
+exports.afterDeleteApplication = function(applicationName) {
 	var hooks = getClusterApplicationHooksExtensions();
 	for (var i = 0 ; i < hooks.length; i ++) {
 		if (hooks[i] && isFunction(hooks[i].afterDeleteApplication)) {
-			hooks[i].afterDeleteApplication(application);
+			hooks[i].afterDeleteApplication(applicationName);
 		}
 	}
 };
