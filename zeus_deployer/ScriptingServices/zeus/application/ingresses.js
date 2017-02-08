@@ -6,7 +6,7 @@ var response = require('net/http/response');
 var xss = require('utils/xss');
 
 var cluster = require('zeus/utils/cluster');
-var kubernetesIngresses = require('kubernetes/ingresses');
+var kubernetesIngresses = require('kubernetes/ingresses').getApi();
 var kubernetesIngressUtils = require('kubernetes/utils/ingress');
 
 handleRequest(request, response);

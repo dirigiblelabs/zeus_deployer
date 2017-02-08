@@ -6,7 +6,7 @@ var response = require('net/http/response');
 var xss = require('utils/xss');
 
 var cluster = require('zeus/utils/cluster');
-var kubernetesServices = require('kubernetes/services');
+var kubernetesServices = require('kubernetes/services').getApi();
 
 handleRequest(request, response);
 

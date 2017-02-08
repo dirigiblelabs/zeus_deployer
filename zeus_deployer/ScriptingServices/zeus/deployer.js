@@ -8,8 +8,8 @@ var templates = require('zeus/templates/utils/templates');
 var generator = require('zeus/templates/utils/generator');
 var cluster = require('zeus/utils/cluster');
 
-var kubernetesDeployments = require('kubernetes/deployments');
-var kubernetesServices = require('kubernetes/services');
+var kubernetesDeployments = require('kubernetes/deployments').getApi();
+var kubernetesServices = require('kubernetes/services').getApi();
 
 handleRequest(request, response);
 

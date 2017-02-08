@@ -6,7 +6,7 @@ var response = require('net/http/response');
 var xss = require('utils/xss');
 
 var cluster = require('zeus/utils/cluster');
-var kubernetesNamespaces = require('kubernetes/namespaces');
+var kubernetesNamespaces = require('kubernetes/namespaces').getApi();
 var kubernetesNamespaceUtils = require('kubernetes/utils/namespace');
 
 handleRequest(request, response);
