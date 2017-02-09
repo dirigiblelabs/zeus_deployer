@@ -7,11 +7,11 @@ var xss = require('utils/xss');
 
 var cluster = require('zeus/utils/cluster');
 
-var kubernetesIngresses = require('kubernetes/ingresses').getApi();
-var kubernetesServices = require('kubernetes/services').getApi();
-var kubernetesDeployments = require('kubernetes/deployments').getApi();
-var kubernetesReplicaSets = require('kubernetes/replicasets').getApi();
-var kubernetesPods = require('kubernetes/pods').getApi();
+var kubernetesIngresses = require('kubernetes/ingresses');
+var kubernetesServices = require('kubernetes/services');
+var kubernetesDeployments = require('kubernetes/deployments');
+var kubernetesReplicaSets = require('kubernetes/replicasets');
+var kubernetesPods = require('kubernetes/pods');
 
 handleRequest(request, response);
 
