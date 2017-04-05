@@ -11,7 +11,9 @@ var kubernetesIngresses = require('kubernetes/ingresses');
 var kubernetesReplicaSets = require('kubernetes/replicasets');
 var kubernetesPods = require('kubernetes/pods');
 
-exports.deploy = function(applicationTemplateId, applicationName) {
+var kubernetesIngressUtils = require('kubernetes/utils/ingress');
+
+exports.deploy = function(applicationTemplateId, applicationName, ingress) {
 	if (!applicationTemplateId) {
 		throw new Error('Missing applicationTemplateId!');
 	} else if (!applicationName) {
@@ -29,13 +31,28 @@ exports.deploy = function(applicationTemplateId, applicationName) {
 	createDeployments(server, token, namespace, generatedBody.deployments);
 	createServices(server, token, namespace, generatedBody.services);
 
-	// TODO Add optional Ingress?
-
-    cluster.afterCreateApplication({
+	var application = {
     	'applicationTemplateId': applicationTemplateId,
-    	'name': applicationName
-    });
+    	'name': applicationName,
+    	'application_name': applicationName
+    };
+
+	if (ingress) {
+		addIngress(server, token, namespace, application, ingress);
+	}
+
+    cluster.afterCreateApplication(application);
+
+    return application;
 };
+
+function addIngress(server, token, namespace, application, ingress) {
+	var ingressObject = kubernetesIngressUtils.getObject(ingress.name, ingress.namespace, ingress.labels, ingress.host, ingress.path, ingress.serviceName, ingress.servicePort);
+	kubernetesIngresses.create(server, token, namespace, ingressObject);
+
+	application.url = 'http://' + ingress.host;
+	application.isDevInstance = ingress.isDevInstance;
+}
 
 exports.undeploy = function(applicationName) {
 	if (!applicationName) {
