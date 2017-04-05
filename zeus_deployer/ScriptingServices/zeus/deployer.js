@@ -3,13 +3,7 @@
 
 var request = require('net/http/request');
 var response = require('net/http/response');
-
-var templates = require('zeus/templates/utils/templates');
-var generator = require('zeus/templates/utils/generator');
-var cluster = require('zeus/utils/cluster');
-
-var kubernetesDeployments = require('kubernetes/deployments');
-var kubernetesServices = require('kubernetes/services');
+var applications = require('zeus/utils/applications');
 
 handleRequest(request, response);
 
@@ -39,27 +33,8 @@ function handlePostRequest(httpRequest, httpResponse) {
 	var newApplication = getRequestBody(httpRequest);
     // TODO Validate the body!
 
-	var clusterSettings = cluster.getSettings();
-	var server = clusterSettings.server;
-	var namespace = clusterSettings.namespace;
-	var token = clusterSettings.token;
-    
-    var applicationTemplate = templates.getApplicationTemplate(newApplication.applicationTemplateId);
-    var generatedBody = generator.generate(newApplication.name, applicationTemplate, namespace); 
-    
-    for (var i = 0; i < generatedBody.deployments.length; i ++) {
-        var deploymentBody = generatedBody.deployments[i];
-        var deploymentResponse = kubernetesDeployments.create(server, token, namespace, deploymentBody);
-        // TODO Something with the response
-        console.log(JSON.stringify(deploymentResponse));
-    }
-    for (var i = 0; i < generatedBody.services.length; i ++) {
-        var serviceBody = generatedBody.services[i];
-        var serviceResponse = kubernetesServices.create(server, token, namespace, serviceBody);
-        // TODO Something with the response
-        console.log(JSON.stringify(serviceResponse));
-    }
-    cluster.afterCreateApplication(newApplication);
+	applications.deploy(newApplication.applicationTemplateId, newApplication.name);
+
 	sendResponse(httpResponse, httpResponse.CREATED);
 }
 
